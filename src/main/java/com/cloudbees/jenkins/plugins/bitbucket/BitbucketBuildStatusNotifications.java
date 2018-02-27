@@ -100,17 +100,20 @@ public class BitbucketBuildStatusNotifications {
             throws IOException, InterruptedException {
         final SCMSource s = SCMSource.SourceByItem.findSource(build.getParent());
         if (!(s instanceof BitbucketSCMSource)) {
+            listener.getLogger().println("[Bitbucket] Cannot send notifications to a non bitbucket source");
             return;
         }
         BitbucketSCMSource source = (BitbucketSCMSource) s;
         if (new BitbucketSCMSourceContext(null, SCMHeadObserver.none())
                 .withTraits(source.getTraits())
                 .notificationsDisabled()) {
+            listener.getLogger().println("[Bitbucket] Notifications disabled");
             return;
         }
-        SCMRevision r = SCMRevisionAction.getRevision(build);  // TODO JENKINS-44648 getRevision(s, build)
+        SCMRevision r = SCMRevisionAction.getRevision(s, build);
         String hash = getHash(r);
         if (hash == null) {
+            listener.getLogger().println("[Bitbucket] Cannot notify to null hash");
             return;
         }
         if (r instanceof PullRequestSCMRevision) {
@@ -147,6 +150,7 @@ public class BitbucketBuildStatusNotifications {
         public void onCheckout(Run<?, ?> build, SCM scm, FilePath workspace, TaskListener listener, File changelogFile,
                                SCMRevisionState pollingBaseline) throws Exception {
             try {
+                listener.getLogger().println("[Bitbucket] OnCheckout");
                 sendNotifications(build, listener);
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace(listener.error("Could not send notifications"));
@@ -163,6 +167,7 @@ public class BitbucketBuildStatusNotifications {
         @Override
         public void onCompleted(Run<?, ?> build, TaskListener listener) {
             try {
+                listener.getLogger().println("[Bitbucket] OnCompleted");
                 sendNotifications(build, listener);
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace(listener.error("Could not send notifications"));

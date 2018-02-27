@@ -134,6 +134,17 @@ public interface BitbucketApi {
     String getDefaultBranch() throws IOException, InterruptedException;
 
     /**
+     * Returns a branch from repository.
+     *
+     * @param the branch name.
+     * @return the branches in the repository.
+     * @throws IOException if there was a network communications error.
+     * @throws InterruptedException if interrupted while waiting on remote communications.
+     */
+    @NonNull
+    BitbucketBranch getBranch(@NonNull String branchName) throws IOException, InterruptedException;
+
+    /**
      * Returns the branches in the repository.
      *
      * @return the list of branches in the repository.

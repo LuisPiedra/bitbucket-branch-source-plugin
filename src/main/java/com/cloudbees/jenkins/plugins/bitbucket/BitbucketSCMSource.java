@@ -866,7 +866,7 @@ public class BitbucketSCMSource extends SCMSource {
         } else if(head instanceof BitbucketTagSCMHead) {
             BitbucketTagSCMHead tagHead = (BitbucketTagSCMHead) head;
             List<? extends BitbucketBranch> tags = bitbucket.getTags();
-            String revision = findRawNode(head.getName(), tags, listener);
+            String revision = findTagRawNode(head.getName(), tags, listener);
             if (revision == null) {
                 LOGGER.log(Level.WARNING, "No tag found in {0}/{1} with name [{2}]", new Object[] { repoOwner, repository, head.getName() });
                 return null;
@@ -926,6 +926,28 @@ public class BitbucketSCMSource extends SCMSource {
             }
         }
         listener.getLogger().format("Cannot find the PR-%s%n", prId);
+        return null;
+    }
+
+    private String findTagRawNode(String branchName, List<? extends BitbucketBranch> branches, TaskListener listener) {
+        for (BitbucketBranch b : branches) {
+            if (branchName.equals(b.getName())) {
+                String revision = b.getRawNode();
+                if (revision == null) {
+                    if (BitbucketCloudEndpoint.SERVER_URL.equals(getServerUrl())) {
+                        listener.getLogger().format("Cannot resolve the hash of the revision in branch %s%n",
+                                branchName);
+                    } else {
+                        listener.getLogger().format("Cannot resolve the hash of the revision in branch %s. "
+                                        + "Perhaps you are using Bitbucket Server previous to 4.x%n",
+                                branchName);
+                    }
+                    return null;
+                }
+                return revision;
+            }
+        }
+        listener.getLogger().format("Cannot find the branch %s%n", branchName);
         return null;
     }
 

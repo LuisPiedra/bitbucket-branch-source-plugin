@@ -34,6 +34,7 @@ import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
 import hudson.model.listeners.SCMListener;
 import hudson.plugins.mercurial.MercurialSCMSource;
+import hudson.plugins.mercurial.MercurialTagAction;
 import hudson.scm.SCM;
 import hudson.scm.SCMRevisionState;
 import java.io.File;
@@ -114,7 +115,11 @@ public class BitbucketBuildStatusNotifications {
         String hash = getHash(r);
         if (hash == null) {
             listener.getLogger().println("[Bitbucket] Cannot notify to null hash");
-            return;
+            listener.getLogger().println("[Bitbucket] Maybe it's Mercurial hash");
+            MercurialTagAction mercurialTag = build.getAction(hudson.plugins.mercurial.MercurialTagAction.class);
+            if (mercurialTag != null) {
+                createStatus(build, listener, source.buildBitbucketClient(),  mercurialTag.getId());
+            }
         }
         if (r instanceof PullRequestSCMRevision) {
             listener.getLogger().println("[Bitbucket] Notifying pull request build result");

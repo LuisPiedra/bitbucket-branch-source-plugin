@@ -78,6 +78,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
 import jenkins.scm.api.SCMFile;
+import net.sf.json.JSONObject;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
@@ -108,13 +110,16 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
 public class BitbucketCloudApiClient implements BitbucketApi {
     private static final Logger LOGGER = Logger.getLogger(BitbucketCloudApiClient.class.getName());
     private static final HttpHost API_HOST = HttpHost.create("https://api.bitbucket.org");
+    private static final String V1_API_BASE_URL = "https://api.bitbucket.org/1.0/repositories";
     private static final String V2_API_BASE_URL = "https://api.bitbucket.org/2.0/repositories";
     private static final String V2_TEAMS_API_BASE_URL = "https://api.bitbucket.org/2.0/teams";
+    private static final String REPO_URL_TEMPLATE_V1 = V1_API_BASE_URL + "{/owner,repo}";
     private static final String REPO_URL_TEMPLATE = V2_API_BASE_URL + "{/owner,repo}";
     private static final int API_RATE_LIMIT_CODE = 429;
     private static final PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
@@ -414,11 +419,11 @@ public class BitbucketCloudApiClient implements BitbucketApi {
     @NonNull
     @Override
     public List<BitbucketCloudBranch> getBranches() throws IOException, InterruptedException {
-        return getServerBranches("/refs/branches");
+        return getServerBranches("/branches");
     }
 
     public List<BitbucketCloudBranch> getServerBranches(String nodePath) throws IOException, InterruptedException {
-        String url = UriTemplate.fromTemplate(REPO_URL_TEMPLATE + nodePath)
+        String url = UriTemplate.fromTemplate(REPO_URL_TEMPLATE_V1 + nodePath)
                 .set("owner", owner)
                 .set("repo", repositoryName)
                 .expand();
@@ -853,27 +858,24 @@ public class BitbucketCloudApiClient implements BitbucketApi {
         return doRequest(httppost);
     }
 
+    private List<BitbucketCloudBranch> parseBranchesJson(String response) throws IOException {
+                List<BitbucketCloudBranch> branches = new ArrayList<BitbucketCloudBranch>();
+                ObjectMapper mapper = new ObjectMapper();
+                JSONObject obj = JSONObject.fromObject(response);
+                for (Object name : obj.keySet()) {
+                    BitbucketCloudBranch b = mapper.readValue(obj.getJSONObject((String) name).toString(), BitbucketCloudBranch.class);
+                    if (b.getName() == null) {
+                        // The branch name is null sometimes in API JSON response (unknown reason)
+                        b.setName((String) name);
+                    }
+                    branches.add(b);
+                }
+                return branches;
+    }
+
     private List<BitbucketCloudBranch> getAllBranches(String response) throws IOException, InterruptedException {
-        List<BitbucketCloudBranch> branches = new ArrayList<BitbucketCloudBranch>();
-        BitbucketCloudPage<BitbucketCloudBranch> page = JsonParser.mapper.readValue(response,
-                new TypeReference<BitbucketCloudPage<BitbucketCloudBranch>>(){});
-        branches.addAll(page.getValues());
-        while (!page.isLastPage()){
-            response = getRequest(page.getNext());
-            page = JsonParser.mapper.readValue(response,
-                    new TypeReference<BitbucketCloudPage<BitbucketCloudBranch>>(){});
-            branches.addAll(page.getValues());
-        }
-
-        // Filter the inactive branches out
-        List<BitbucketCloudBranch> activeBranches = new ArrayList<>();
-        for (BitbucketCloudBranch branch: branches) {
-            if (branch.isActive()) {
-                activeBranches.add(branch);
-            }
-        }
-
-        return activeBranches;
+        List<BitbucketCloudBranch> branches = parseBranchesJson(response);
+        return branches;
     }
 
     public Iterable<SCMFile> getDirectoryContent(final BitbucketSCMFile parent) throws IOException, InterruptedException {

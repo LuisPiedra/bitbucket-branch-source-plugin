@@ -136,8 +136,8 @@ public interface BitbucketApi {
     /**
      * Returns a branch from repository.
      *
-     * @param the branch name.
-     * @return the branches in the repository.
+     * @param branchName the branch name.
+     * @return the branch in the repository.
      * @throws IOException if there was a network communications error.
      * @throws InterruptedException if interrupted while waiting on remote communications.
      */

@@ -1,8 +1,0 @@
-<com.cloudbees.jenkins.plugins.bitbucket.BitbucketSCMSource>
-  <id>e4d8c11a-0d24-472f-b86b-4b017c160e9a</id>
-  <serverUrl>https://bitbucket.org</serverUrl>
-  <credentialsId>curl</credentialsId>
-  <repoOwner>cloudbeers</repoOwner>
-  <repository>stunning-adventure</repository>
-  <traits/>
-</com.cloudbees.jenkins.plugins.bitbucket.BitbucketSCMSource>

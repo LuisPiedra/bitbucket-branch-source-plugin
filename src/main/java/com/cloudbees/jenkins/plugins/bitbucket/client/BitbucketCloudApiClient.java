@@ -410,7 +410,7 @@ public class BitbucketCloudApiClient implements BitbucketApi {
     @NonNull
     @Override
     public List<BitbucketCloudBranch> getTags() throws IOException, InterruptedException {
-        return getServerBranches("/refs/tags");
+        return getServerBranches(REPO_URL_TEMPLATE, "/refs/tags");
     }
 
     /**
@@ -419,11 +419,11 @@ public class BitbucketCloudApiClient implements BitbucketApi {
     @NonNull
     @Override
     public List<BitbucketCloudBranch> getBranches() throws IOException, InterruptedException {
-        return getServerBranches("/branches");
+        return getServerBranches(REPO_URL_TEMPLATE_V1, "/branches");
     }
 
-    public List<BitbucketCloudBranch> getServerBranches(String nodePath) throws IOException, InterruptedException {
-        String url = UriTemplate.fromTemplate(REPO_URL_TEMPLATE_V1 + nodePath)
+    public List<BitbucketCloudBranch> getServerBranches(String api, String nodePath) throws IOException, InterruptedException {
+        String url = UriTemplate.fromTemplate(api + nodePath)
                 .set("owner", owner)
                 .set("repo", repositoryName)
                 .expand();

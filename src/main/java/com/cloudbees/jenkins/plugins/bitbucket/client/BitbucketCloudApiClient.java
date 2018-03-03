@@ -26,7 +26,6 @@ package com.cloudbees.jenkins.plugins.bitbucket.client;
 
 import com.cloudbees.jenkins.plugins.bitbucket.JsonParser;
 import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketApi;
-import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketBranch;
 import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketBuildStatus;
 import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketCommit;
 import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketException;
@@ -388,31 +387,9 @@ public class BitbucketCloudApiClient implements BitbucketApi {
      */
     @NonNull
     @Override
-    public BitbucketBranch getBranch(String branchName) throws IOException, InterruptedException {
-        String url = UriTemplate.fromTemplate(REPO_URL_TEMPLATE + "/refs/branches{/name}")
-                .set("owner", owner)
-                .set("repo", repositoryName)
-                .set("name", branchName)
-                .expand();
-        String response = getRequest(url);
-        try {
-            BitbucketBranch branch = JsonParser.mapper.readValue(response,
-                    new TypeReference<BitbucketCloudBranch>(){});
-            return branch;
-        } catch (IOException e) {
-            throw new IOException("I/O error when parsing response from URL: " + url, e);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @NonNull
-    @Override
     public List<BitbucketCloudBranch> getTags() throws IOException, InterruptedException {
         return getServerBranches(REPO_URL_TEMPLATE, "/refs/tags");
     }
-
     /**
      * {@inheritDoc}
      */

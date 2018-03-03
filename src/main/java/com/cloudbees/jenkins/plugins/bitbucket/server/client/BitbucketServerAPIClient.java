@@ -25,7 +25,6 @@ package com.cloudbees.jenkins.plugins.bitbucket.server.client;
 
 import com.cloudbees.jenkins.plugins.bitbucket.JsonParser;
 import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketApi;
-import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketBranch;
 import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketBuildStatus;
 import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketCommit;
 import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketPullRequest;
@@ -904,12 +903,6 @@ public class BitbucketServerAPIClient implements BitbucketApi {
             }
         }
         return content;
-    }
-
-    @Override
-    public BitbucketBranch getBranch(String branchName) throws IOException, InterruptedException {
-        // TODO Auto-generated method stub
-        return null;
     }
 
 }

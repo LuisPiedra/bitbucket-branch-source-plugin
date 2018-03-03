@@ -825,9 +825,10 @@ public class BitbucketSCMSource extends SCMSource {
     @Override
     protected SCMRevision retrieve(SCMHead head, TaskListener listener) throws IOException, InterruptedException {
         final BitbucketApi bitbucket = buildBitbucketClient();
+        List<? extends BitbucketBranch> branches = bitbucket.getBranches();
         if (head instanceof PullRequestSCMHead) {
             PullRequestSCMHead h = (PullRequestSCMHead) head;
-            String targetRevision = findRawNode(bitbucket.getBranch(h.getTarget().getName()), listener);
+            String targetRevision = findRawNode(h.getTarget().getName(), branches, listener);
             if (targetRevision == null) {
                 LOGGER.log(Level.WARNING, "No branch found in {0}/{1} with name [{2}]",
                         new Object[]{repoOwner, repository, h.getTarget().getName()});
@@ -835,7 +836,10 @@ public class BitbucketSCMSource extends SCMSource {
             }
             String sourceRevision;
             if (bitbucket instanceof BitbucketCloudApiClient) {
-                sourceRevision = findRawNode(bitbucket.getBranch(h.getBranchName()), listener);
+                branches = head.getOrigin() == SCMHeadOrigin.DEFAULT
+                        ? branches
+                        : buildBitbucketClient(h).getBranches();
+                sourceRevision = findRawNode(h.getBranchName(), branches, listener);
             } else {
                 final List<? extends BitbucketPullRequest> pullRequests = bitbucket.getPullRequests();
                 sourceRevision = findPRRawNode(h.getId(), pullRequests, listener);
@@ -877,7 +881,7 @@ public class BitbucketSCMSource extends SCMSource {
                 return new GitTagSCMRevision(tagHead, revision);
             }
         } else {
-            String revision = findRawNode(bitbucket.getBranch(head.getName()), listener);
+            String revision = findRawNode(head.getName(), branches, listener);
             if (revision == null) {
                 LOGGER.log(Level.WARNING, "No branch found in {0}/{1} with name [{2}]",
                         new Object[]{repoOwner, repository, head.getName()});
@@ -891,20 +895,26 @@ public class BitbucketSCMSource extends SCMSource {
         }
     }
 
-    private String findRawNode(BitbucketBranch branch, TaskListener listener) {
-        String revision = branch.getRawNode();
-        if (revision == null) {
-            if (BitbucketCloudEndpoint.SERVER_URL.equals(getServerUrl())) {
-                listener.getLogger().format("Cannot resolve the hash of the revision in branch %s%n",
-                        branch.getName());
-            } else {
-                listener.getLogger().format("Cannot resolve the hash of the revision in branch %s. "
-                                + "Perhaps you are using Bitbucket Server previous to 4.x%n",
-                        branch.getName());
+    private String findRawNode(String branchName, List<? extends BitbucketBranch> branches, TaskListener listener) {
+        for (BitbucketBranch b : branches) {
+            if (branchName.equals(b.getName())) {
+                String revision = b.getRawNode();
+                if (revision == null) {
+                    if (BitbucketCloudEndpoint.SERVER_URL.equals(getServerUrl())) {
+                        listener.getLogger().format("Cannot resolve the hash of the revision in branch %s%n",
+                                branchName);
+                    } else {
+                        listener.getLogger().format("Cannot resolve the hash of the revision in branch %s. "
+                                        + "Perhaps you are using Bitbucket Server previous to 4.x%n",
+                                branchName);
+                    }
+                    return null;
+                }
+                return revision;
             }
-            return null;
         }
-        return revision;
+        listener.getLogger().format("Cannot find the branch %s%n", branchName);
+        return null;
     }
 
     private String findPRRawNode(String prId, List<? extends BitbucketPullRequest> pullRequests, TaskListener listener) {

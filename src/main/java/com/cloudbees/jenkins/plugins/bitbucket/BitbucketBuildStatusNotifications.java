@@ -114,7 +114,6 @@ public class BitbucketBuildStatusNotifications {
         SCMRevision r = SCMRevisionAction.getRevision(s, build);
         String hash = getHash(r);
         if (hash == null) {
-            listener.getLogger().println("[Bitbucket] Cannot notify to null hash");
             listener.getLogger().println("[Bitbucket] Maybe it's Mercurial hash");
             MercurialTagAction mercurialTag = build.getAction(hudson.plugins.mercurial.MercurialTagAction.class);
             if (mercurialTag != null) {

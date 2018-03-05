@@ -25,6 +25,8 @@ package com.cloudbees.jenkins.plugins.bitbucket;
 
 import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketApi;
 import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketBuildStatus;
+import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketRequestException;
+
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.FilePath;
@@ -91,6 +93,7 @@ public class BitbucketBuildStatusNotifications {
         } else {
             status = new BitbucketBuildStatus(hash, "The tests have started...", "INPROGRESS", url, key, name);
         }
+        listener.getLogger().println("[Bitbucket] "+status.toString());
         new BitbucketChangesetCommentNotifier(bitbucket).buildStatus(status);
         if (result != null) {
             listener.getLogger().println("[Bitbucket] Build result notified");
@@ -119,6 +122,7 @@ public class BitbucketBuildStatusNotifications {
             if (mercurialTag != null) {
                 createStatus(build, listener, source.buildBitbucketClient(),  mercurialTag.getId());
             }
+            return;
         }
         if (r instanceof PullRequestSCMRevision) {
             listener.getLogger().println("[Bitbucket] Notifying pull request build result");
@@ -156,6 +160,8 @@ public class BitbucketBuildStatusNotifications {
             try {
                 listener.getLogger().println("[Bitbucket] OnCheckout");
                 sendNotifications(build, listener);
+            } catch (BitbucketRequestException e) {
+            	listener.getLogger().println("[Bitbucket] Unexcepted " + e.getHttpCode());
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace(listener.error("Could not send notifications"));
             }
@@ -173,6 +179,8 @@ public class BitbucketBuildStatusNotifications {
             try {
                 listener.getLogger().println("[Bitbucket] OnCompleted");
                 sendNotifications(build, listener);
+            } catch (BitbucketRequestException e) {
+            	listener.getLogger().println("[Bitbucket] Unexcepted " + e.getHttpCode());
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace(listener.error("Could not send notifications"));
             }

@@ -38,6 +38,7 @@ import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketTeam;
 import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketWebHook;
 import com.cloudbees.jenkins.plugins.bitbucket.client.branch.BitbucketCloudBranch;
 import com.cloudbees.jenkins.plugins.bitbucket.client.branch.BitbucketCloudCommit;
+import com.cloudbees.jenkins.plugins.bitbucket.client.branch.BitbucketCloudTag;
 import com.cloudbees.jenkins.plugins.bitbucket.client.pullrequest.BitbucketPullRequestCommit;
 import com.cloudbees.jenkins.plugins.bitbucket.client.pullrequest.BitbucketPullRequestCommits;
 import com.cloudbees.jenkins.plugins.bitbucket.client.pullrequest.BitbucketPullRequestValue;
@@ -387,9 +388,20 @@ public class BitbucketCloudApiClient implements BitbucketApi {
      */
     @NonNull
     @Override
-    public List<BitbucketCloudBranch> getTags() throws IOException, InterruptedException {
-        return getServerBranches(REPO_URL_TEMPLATE, "/refs/tags");
+    public List<BitbucketCloudTag> getTags() throws IOException, InterruptedException {
+        String url = UriTemplate.fromTemplate(REPO_URL_TEMPLATE + "/refs/tags")
+                .set("owner", owner)
+                .set("repo", repositoryName)
+                .expand();
+        String response = getRequest(url);
+        try {
+            return getAllTags(response);
+        } catch (IOException e) {
+            throw new IOException("I/O error when parsing response from URL: " + url, e);
+        }
     }
+
+    
     /**
      * {@inheritDoc}
      */
@@ -855,6 +867,21 @@ public class BitbucketCloudApiClient implements BitbucketApi {
         return branches;
     }
 
+    private List<BitbucketCloudTag> getAllTags(String response) throws IOException, InterruptedException {
+        List<BitbucketCloudTag> branches = new ArrayList<BitbucketCloudTag>();
+        BitbucketCloudPage<BitbucketCloudTag> page = JsonParser.mapper.readValue(response,
+                new TypeReference<BitbucketCloudPage<BitbucketCloudTag>>(){});
+        branches.addAll(page.getValues());
+        while (!page.isLastPage()){
+            response = getRequest(page.getNext());
+            page = JsonParser.mapper.readValue(response,
+                    new TypeReference<BitbucketCloudPage<BitbucketCloudTag>>(){});
+            branches.addAll(page.getValues());
+        }
+
+        return branches;
+}
+    
     public Iterable<SCMFile> getDirectoryContent(final BitbucketSCMFile parent) throws IOException, InterruptedException {
         String url = UriTemplate.fromTemplate(REPO_URL_TEMPLATE + "/src{/branchOrHash,path}")
                 .set("owner", owner)

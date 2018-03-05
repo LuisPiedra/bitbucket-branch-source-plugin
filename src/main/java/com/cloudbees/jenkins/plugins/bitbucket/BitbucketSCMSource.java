@@ -803,7 +803,10 @@ public class BitbucketSCMSource extends SCMSource {
         }
         int count = 0;
         for (final BitbucketBranch tag : request.getTags()) {
-            request.listener().getLogger().println("Checking tag " + tag.getName() + " from " + fullName);
+        	if ("tip".equals(tag.getName())) {
+        		continue;
+        	}
+            request.listener().getLogger().println("Checking tag " + tag.getName() + " from " + fullName + " ("+tag.getDateMillis() +")");
             count++;
             if (request.process(new BitbucketTagSCMHead(tag.getName(), tag.getDateMillis(), repositoryType),
                     new SCMSourceRequest.IntermediateLambda<String>() {

@@ -36,7 +36,13 @@ public class BitbucketBuildStatus {
     @JsonIgnore
     private String hash;
 
-    /**
+    @Override
+	public String toString() {
+		return "BitbucketBuildStatus [hash=" + hash + ", description=" + description + ", state=" + state + ", url="
+				+ url + ", key=" + key + ", name=" + name + "]";
+	}
+
+	/**
      * Text shown in the UI
      */
     private String description;
